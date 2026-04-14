@@ -572,6 +572,7 @@ void reproducirAcierto(int colorId) {
 void reproducirVictoria() {
 
   if (!dfOk || !audioHabilitado) return;
+  delay(1200);
 
   if (idioma == 0) mp3.play(T_VICTORIA_ES);
   else if (idioma == 1) mp3.play(T_VICTORIA_KQ);
