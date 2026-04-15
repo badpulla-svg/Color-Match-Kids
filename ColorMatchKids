@@ -1,6 +1,8 @@
 #include <FastLED.h>
 #include <DFRobotDFPlayerMini.h>
 
+// MAPEO D ETODAS LAS PISTAS
+
 // Español
 #define T_FACIL_ES       1
 #define T_MEDIO_ES       2
@@ -26,21 +28,21 @@
 #define T_COLOR_VERDE_KQ 25
 
 // INGLES
-#define T_FACIL_EN       26   
-#define T_MEDIO_EN       27   
-#define T_DIFICIL_EN     28   
+#define T_FACIL_EN       26   // Easy mode selected
+#define T_MEDIO_EN       27   // Medium mode selected
+#define T_DIFICIL_EN     28   // Hard mode selected
 
-#define T_NUEVO_EN       29   
-#define T_INTENTA_EN     30   
-#define T_IDIOMA_EN      31   
+#define T_NUEVO_EN       29   // New pattern
+#define T_INTENTA_EN     30   // Try again
+#define T_IDIOMA_EN      31   // English selected
 
-#define T_ACIERTO_EN     35   
-#define T_VICTORIA_EN    36   
-#define T_APLAUSOS       37   
+#define T_ACIERTO_EN     35   // Good job!
+#define T_VICTORIA_EN    36   // Congratulations!
+#define T_APLAUSOS       37   //Hurra!!
 
-#define T_COLOR_ROJO_EN  32   
-#define T_COLOR_AZUL_EN  33   
-#define T_COLOR_VERDE_EN 34   
+#define T_COLOR_ROJO_EN  32   // Red
+#define T_COLOR_AZUL_EN  33   // Blue
+#define T_COLOR_VERDE_EN 34   // Green
 
 // Idiomas y audio on/off
 #define T_IDIOMA_ES      11
@@ -59,11 +61,11 @@
 CRGB leds[NUM_LEDS];
 
 // PULSANTES
-#define BUTTON_PIN        2      
-#define BUTTON_IDIOMA     3      
+#define BUTTON_PIN        2      // cambio patrón / modo
+#define BUTTON_IDIOMA     3      // cambio idioma y mute
 
 // CONEXION BLUETOOTJ
-#define BT Serial1   
+#define BT Serial1   // HC-05: TX→19, RX→18 (con divisor)
 
 // MODULO DFPLAYER
 DFRobotDFPlayerMini mp3;
@@ -74,18 +76,18 @@ int modo = 0;          // 0=fácil, 1=medio, 2=difícil
 int idioma = 0;        // 0=ES, 1=KQ, 2=COMB (ES+KQ+EN), 3=EN
 bool audioHabilitado = true;
 
-int seccionColor[9];   // patrón del tablero
+int seccionColor[9];   // patrón del tablero 1
 
 unsigned long tPressed = 0;
 bool prevButton = HIGH;
 
 unsigned long idiomaPressStart = 0;
 
-// DETECCION DE COLOR 
-// Casillas 0 a 8
-// ROJO -> A en GND
-// AZUL -> B en GND
-// VERDE -> A y B en GND
+// DETECCION DE COLOR ------- DONDE EL GUAGUA PONE LOS COLORES CON BORNERAS BANANAS
+// Casillas 0..8
+// ROJO -> A a GND
+// AZUL -> B a GND
+// VERDE -> A y B a GND
 
 const int pinA[9] = {30, 32, 34, 36, 38, 40, 42, 44, 46};
 const int pinB[9] = {31, 33, 35, 37, 39, 41, 43, 45, 47};
@@ -94,8 +96,11 @@ const int pinB[9] = {31, 33, 35, 37, 39, 41, 43, 45, 47};
 int jugadorColor[9];
 int ultimoJugadorColor[9];
 bool victoriaAnunciada = false;
+bool casillaCorrecta[9];
 
-
+// 
+// SETUP
+// 
 void setup() {
 
   Serial.begin(9600);
@@ -107,7 +112,7 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(BUTTON_IDIOMA, INPUT_PULLUP);
 
-  // Entradas del tablero
+  // Entradas del tablero del guagua
   for (int i = 0; i < 9; i++) {
     pinMode(pinA[i], INPUT_PULLUP);
     pinMode(pinB[i], INPUT_PULLUP);
@@ -130,8 +135,10 @@ void setup() {
   mostrarPatron();
 }
 
-// LOOP
 
+// 
+// LOOP
+// 
 void loop() {
   leerBoton();
   leerBotonIdioma();
@@ -140,9 +147,9 @@ void loop() {
 }
 
 
-
+// 
 // BOTÓN PRINCIPAL (PATRÓN Y  MODOS)
- 
+// 
 void leerBoton() {
 
   bool estado = digitalRead(BUTTON_PIN);
@@ -167,9 +174,9 @@ void leerBoton() {
 }
 
 
-
-// BOTÓN DE IDIOMA: CICLO ES → KQ → COMB → EN + MUTE
-
+// 
+// BOTÓN DE IDIOMA: CICLO ES → KQ → COMB → EN + MUTE/LARGO
+// 
 void leerBotonIdioma() {
 
   bool pressed = !digitalRead(BUTTON_IDIOMA);
@@ -218,9 +225,9 @@ void leerBotonIdioma() {
 }
 
 
- 
+// 
 // BLUETOOTH
-
+// 
 void leerBluetooth() {
 
   if (!BT.available()) return;
@@ -257,9 +264,9 @@ void leerBluetooth() {
 }
 
 
-
+// 
 // CAMBIO DE MODO
-
+// 
 void cambiarModo() {
   modo = (modo + 1) % 3;
   indicadorModo();
@@ -269,9 +276,9 @@ void cambiarModo() {
 }
 
 
-
+// 
 // INDICADOR VISUAL DEL MODO
-
+// 
 void indicadorModo() {
 
   CRGB color;
@@ -291,9 +298,9 @@ void indicadorModo() {
 }
 
 
-
+// 
 // GENERAR PATRÓN
-
+// 
 void generarPatron() {
 
   int cantidad;
@@ -305,6 +312,7 @@ void generarPatron() {
     seccionColor[i] = -1;
     jugadorColor[i] = -1;
     ultimoJugadorColor[i] = -1;
+    casillaCorrecta[i] = false; 
   }
 
   victoriaAnunciada = false;
@@ -317,9 +325,9 @@ void generarPatron() {
 }
 
 
-
-// PATRÓN
-
+// 
+// MOSTRAR PATRÓN EN LA TIRA
+// 
 void mostrarPatron() {
 
   FastLED.clear();
@@ -345,9 +353,9 @@ void mostrarPatron() {
 }
 
 
-
+// 
 // AUDIO: NUEVO PATRÓN
-
+// 
 void reproducirNuevoPatron() {
 
   if (!dfOk || !audioHabilitado) return;
@@ -363,9 +371,9 @@ void reproducirNuevoPatron() {
 }
 
 
-
+// 
 // AUDIO: MODO (FACIL/MEDIO/DIFICIL)
-
+// 
 void reproducirModo() {
 
   if (!dfOk || !audioHabilitado) return;
@@ -408,8 +416,10 @@ void reproducirModo() {
   }
 }
 
-// LECTURA DE UNA CASILLA DEL TABLERO DEL GUAGUA
 
+// 
+// LECTURA DE UNA CASILLA DEL TABLERO DEL GUAGUA
+// 
 int leerCasilla(int c) {
   int a = digitalRead(pinA[c]);
   int b = digitalRead(pinB[c]);
@@ -423,8 +433,10 @@ int leerCasilla(int c) {
   return -1;
 }
 
-// ACTUALIZAR TABLERO: ACIERTO / ERROR / VICTORIA
 
+// 
+// ACTUALIZAR TABLERO DEL GUAGUA: ACIERTO / ERROR / VICTORIA
+// 
 void actualizarTableroJugador() {
 
   // Leer todas las casillas
@@ -443,6 +455,9 @@ void actualizarTableroJugador() {
       // Si quedó vacío, no hacemos nada
       if (nuevo == -1) continue;
 
+      // Si la casilla ya fue correcta antes → ignorar cambios
+      if (casillaCorrecta[i]) continue;
+
       // Si el patrón no requiere color en esa casilla → error
       if (seccionColor[i] == -1) {
         reproducirError();
@@ -455,7 +470,8 @@ void actualizarTableroJugador() {
         continue;
       }
 
-      // Si llegó aquí, acierto
+      // ✅ ACIERTO
+      casillaCorrecta[i] = true;
       reproducirAcierto(nuevo);
     }
   }
@@ -479,9 +495,9 @@ if (!victoriaAnunciada) {
 
   if (completo) {
 
-  if (modo == 0 || modo == 1) {   // si es fácil o medio
+  if (modo == 0 || modo == 1) {   // fácil o medio
      reproducirAplausos();
-     } else {                        // si es difícil
+     } else {                        // difícil
     reproducirVictoria();
   }
     victoriaAnunciada = true;
@@ -490,9 +506,9 @@ if (!victoriaAnunciada) {
 }
 
 
-
+// 
 // AUDIO: ERROR
-
+// 
 void reproducirError() {
 
   if (!dfOk || !audioHabilitado) return;
@@ -506,14 +522,16 @@ void reproducirError() {
     mp3.play(T_INTENTA_EN);
   }
 }
- 
-// AUDIO: ACIERTO (MODO FÁCIL = COLOR / MEDIO-DIFÍCIL = "MUY BIEN")
 
+
+// 
+// AUDIO: ACIERTO (MODO FÁCIL = COLOR / MEDIO-DIFÍCIL = "MUY BIEN")
+// 
 void reproducirAcierto(int colorId) {
 
   if (!dfOk || !audioHabilitado) return;
 
-  // Modo FÁCIL
+  // Modo FÁCIL: decir el color
   if (modo == 0) {
 
     // Español
@@ -553,6 +571,7 @@ void reproducirAcierto(int colorId) {
       }
     }
   }
+
   // MODO MEDIO / DIFÍCIL: solo "muy bien"
   else {
 
@@ -567,13 +586,16 @@ void reproducirAcierto(int colorId) {
   }
 }
 
-// AUDIO: VICTORIA
 
+// 
+// AUDIO: VICTORIA
+// 
 void reproducirVictoria() {
 
   if (!dfOk || !audioHabilitado) return;
-  delay(1200);
 
+  delay(1200);
+  
   if (idioma == 0) mp3.play(T_VICTORIA_ES);
   else if (idioma == 1) mp3.play(T_VICTORIA_KQ);
   else if (idioma == 3) mp3.play(T_VICTORIA_EN);
@@ -588,6 +610,6 @@ void reproducirAplausos() {
 
   if (!dfOk || !audioHabilitado) return;
 
-  delay(1500);
+  delay(1500);   // dejar terminar el audio anterior
   mp3.play(T_APLAUSOS);
 }
