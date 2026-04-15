@@ -1,7 +1,7 @@
 #include <FastLED.h>
 #include <DFRobotDFPlayerMini.h>
 
-// MAPEO D ETODAS LAS PISTAS
+// MAPEO DE TODAS LAS PISTAS
 
 // Español
 #define T_FACIL_ES       1
@@ -470,7 +470,7 @@ void actualizarTableroJugador() {
         continue;
       }
 
-      // ✅ ACIERTO
+      // Aciertos
       casillaCorrecta[i] = true;
       reproducirAcierto(nuevo);
     }
